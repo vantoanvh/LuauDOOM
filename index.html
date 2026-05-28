@@ -1,0 +1,1174 @@
+<!-- Converts a DOOM IWAD/PWAD into a Roblox RBXMX module and combined WAV sound file. -->
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>DOOM Data Dumper</title>
+	<style>
+		:root {
+			--bg: #050505;
+			--panel: #0b0b0c;
+			--surface: #101113;
+			--surface-hover: #151619;
+			--text: #f4f4f5;
+			--muted: #8e929a;
+			--border: rgba(255, 255, 255, 0.12);
+			--border-strong: rgba(255, 255, 255, 0.2);
+			--focus: rgba(255, 255, 255, 0.12);
+			color-scheme: dark;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			display: grid;
+			min-height: 100vh;
+			min-height: 100svh;
+			margin: 0;
+			place-items: center;
+			padding: 16px;
+			background: var(--bg);
+			color: var(--text);
+			font-family: Inter, "Segoe UI", system-ui, sans-serif;
+		}
+
+		main {
+			width: min(560px, 100%);
+			padding: 18px;
+			border: 1px solid var(--border);
+			border-radius: 12px;
+			background: var(--panel);
+			box-shadow: 0 20px 48px rgba(0, 0, 0, 0.34);
+		}
+
+		.title {
+			margin: 0;
+			font-size: 16px;
+			font-weight: 600;
+			letter-spacing: 0.2px;
+		}
+
+		.status {
+			margin: 5px 0 16px;
+			color: var(--muted);
+			font-size: 12px;
+			line-height: 1.45;
+		}
+
+		input,
+		button {
+			font: inherit;
+		}
+
+		.file-input {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		.controls {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(184px, 0.7fr);
+			gap: 12px;
+			align-items: stretch;
+		}
+
+		.download-actions {
+			display: grid;
+			width: 100%;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 12px;
+			justify-content: center;
+		}
+
+		.options {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px;
+			margin: 14px 0 0;
+		}
+
+		.option {
+			position: relative;
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) 42px;
+			gap: 12px;
+			align-items: start;
+			min-height: 86px;
+			padding: 12px;
+			border: 1px solid var(--border);
+			border-radius: 10px;
+			background: var(--surface);
+			cursor: pointer;
+			transition: border-color 0.15s ease, background 0.15s ease;
+		}
+
+		.option:hover,
+		.option:has(.toggle-input:focus-visible) {
+			border-color: var(--border-strong);
+			background: var(--surface-hover);
+		}
+
+		.option:has(.toggle-input:disabled) {
+			cursor: default;
+			opacity: 0.48;
+		}
+
+		.option-text {
+			min-width: 0;
+		}
+
+		.option-label,
+		.option-meta,
+		.option-description {
+			display: block;
+		}
+
+		.option-label {
+			font-size: 13px;
+			font-weight: 700;
+			line-height: 1.15;
+		}
+
+		.option-meta {
+			margin-top: 3px;
+			color: var(--muted);
+			font-size: 11px;
+			line-height: 1.15;
+		}
+
+		.option-description {
+			margin-top: 6px;
+			color: #b6bac2;
+			font-size: 11px;
+			line-height: 1.3;
+			min-height: 29px;
+		}
+
+		.toggle-input {
+			position: absolute;
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		.toggle-track {
+			position: relative;
+			margin-top: 1px;
+			width: 42px;
+			height: 24px;
+			border: 1px solid var(--border);
+			border-radius: 999px;
+			background: #070708;
+			box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+			transition: border-color 0.15s ease, background 0.15s ease;
+		}
+
+		.toggle-track::after {
+			content: "";
+			position: absolute;
+			top: 3px;
+			left: 3px;
+			width: 16px;
+			height: 16px;
+			border-radius: 50%;
+			background: var(--muted);
+			transition: transform 0.15s ease, background 0.15s ease;
+		}
+
+		.toggle-input:checked + .toggle-track {
+			border-color: #f4f4f5;
+			background: #f4f4f5;
+		}
+
+		.toggle-input:checked + .toggle-track::after {
+			background: #050505;
+			transform: translateX(18px);
+		}
+
+		.picker {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			width: 100%;
+			min-width: 0;
+			min-height: 52px;
+			padding: 7px;
+			border: 1px solid var(--border);
+			border-radius: 10px;
+			background: var(--surface);
+			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+			cursor: pointer;
+			transition: border-color 0.15s ease, background 0.15s ease;
+		}
+
+		.picker:hover,
+		.file-input:focus-visible + .picker {
+			border-color: var(--border-strong);
+			background: var(--surface-hover);
+		}
+
+		.file-action {
+			flex: 0 0 auto;
+			padding: 8px 11px;
+			border: 1px solid var(--border);
+			border-radius: 9px;
+			background: var(--surface);
+			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+			color: var(--text);
+			font-size: 13px;
+			font-weight: 600;
+			line-height: 1;
+		}
+
+		.file-details {
+			min-width: 0;
+			text-align: right;
+		}
+
+		.file-name,
+		.file-size {
+			display: block;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.file-name {
+			color: var(--text);
+			font-size: 13px;
+			font-weight: 600;
+			line-height: 1.25;
+		}
+
+		.file-size {
+			margin-top: 3px;
+			color: var(--muted);
+			font-size: 11px;
+			line-height: 1.2;
+		}
+
+		button {
+			display: grid;
+			width: 100%;
+			min-height: 46px;
+			padding: 6px 9px;
+			place-items: center;
+			border: 1px solid #f4f4f5;
+			border-radius: 9px;
+			background: #f4f4f5;
+			color: #050505;
+			cursor: pointer;
+			font-size: 13px;
+			font-weight: 700;
+			line-height: 1;
+			transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+		}
+
+		button:hover:not(:disabled) {
+			border-color: #ffffff;
+			background: #ffffff;
+			transform: translateY(1px);
+		}
+
+		button:disabled {
+			cursor: default;
+			opacity: 0.42;
+		}
+
+		button:focus-visible {
+			outline: none;
+			box-shadow: 0 0 0 3px var(--focus);
+		}
+
+		button:active:not(:disabled) {
+			transform: translateY(0);
+		}
+
+		@media (max-width: 560px) {
+			.controls,
+			.options {
+				grid-template-columns: 1fr;
+			}
+
+			.download-actions {
+				width: 100%;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+
+			.option {
+				min-height: 82px;
+			}
+
+			.file-details {
+				text-align: left;
+			}
+
+			button {
+				width: 100%;
+			}
+		}
+	</style>
+</head>
+<body>
+<main>
+	<h1 class="title">DOOM Data Dumper</h1>
+	<p id="summary" class="status" aria-live="polite">Choose an IWAD or PWAD. Export creates a Roblox module and a combined WAV sound atlas.</p>
+
+	<div class="controls">
+		<input id="wadFile" class="file-input" type="file" accept=".wad,.WAD">
+		<label class="picker" for="wadFile">
+			<span class="file-action">Choose File</span>
+			<span class="file-details">
+				<span id="fileName" class="file-name">Nothing loaded</span>
+				<span id="fileSize" class="file-size">IWAD or PWAD input</span>
+			</span>
+		</label>
+		<div class="download-actions">
+			<button id="downloadRbxmx" type="button" disabled>RBXMX</button>
+			<button id="downloadWav" type="button" disabled>WAV</button>
+		</div>
+	</div>
+
+	<div class="options" aria-label="Export options">
+		<label class="option">
+			<span class="option-text">
+				<span class="option-label">Zstd</span>
+				<span class="option-meta">Compression</span>
+				<span class="option-description">Compresses WAD bytes before writing the module.</span>
+			</span>
+			<input id="zstdToggle" class="toggle-input" type="checkbox">
+			<span class="toggle-track" aria-hidden="true"></span>
+		</label>
+		<label class="option">
+			<span class="option-text">
+				<span class="option-label">Base64</span>
+				<span class="option-meta">Format</span>
+				<span class="option-description">Stores encoded bytes as clean Base64 text.</span>
+			</span>
+			<input id="base64Toggle" class="toggle-input" type="checkbox" checked>
+			<span class="toggle-track" aria-hidden="true"></span>
+		</label>
+		<label class="option">
+			<span class="option-text">
+				<span class="option-label">No split lines</span>
+				<span class="option-meta">No \z split</span>
+				<span class="option-description">Keeps one long string instead of inserting Luau continuations.</span>
+			</span>
+			<input id="oneLineToggle" class="toggle-input" type="checkbox">
+			<span class="toggle-track" aria-hidden="true"></span>
+		</label>
+		<label class="option">
+			<span class="option-text">
+				<span class="option-label">Include Exact Range</span>
+				<span class="option-meta">Sound timing</span>
+				<span class="option-description">Stores trimmed sound start and end ranges in metadata.</span>
+			</span>
+			<input id="exactRangesToggle" class="toggle-input" type="checkbox" checked>
+			<span class="toggle-track" aria-hidden="true"></span>
+		</label>
+	</div>
+</main>
+
+<script>
+"use strict";
+
+const SFX = [
+	["none", false, 0, 0, -1, -1],
+	["pistol", false, 64, 0, -1, -1],
+	["shotgn", false, 64, 0, -1, -1],
+	["sgcock", false, 64, 0, -1, -1],
+	["dshtgn", false, 64, 0, -1, -1],
+	["dbopn", false, 64, 0, -1, -1],
+	["dbcls", false, 64, 0, -1, -1],
+	["dbload", false, 64, 0, -1, -1],
+	["plasma", false, 64, 0, -1, -1],
+	["bfg", false, 64, 0, -1, -1],
+	["sawup", false, 64, 0, -1, -1],
+	["sawidl", false, 118, 0, -1, -1],
+	["sawful", false, 64, 0, -1, -1],
+	["sawhit", false, 64, 0, -1, -1],
+	["rlaunc", false, 64, 0, -1, -1],
+	["rxplod", false, 70, 0, -1, -1],
+	["firsht", false, 70, 0, -1, -1],
+	["firxpl", false, 70, 0, -1, -1],
+	["pstart", false, 100, 0, -1, -1],
+	["pstop", false, 100, 0, -1, -1],
+	["doropn", false, 100, 0, -1, -1],
+	["dorcls", false, 100, 0, -1, -1],
+	["stnmov", false, 119, 0, -1, -1],
+	["swtchn", false, 78, 0, -1, -1],
+	["swtchx", false, 78, 0, -1, -1],
+	["plpain", false, 96, 0, -1, -1],
+	["dmpain", false, 96, 0, -1, -1],
+	["popain", false, 96, 0, -1, -1],
+	["vipain", false, 96, 0, -1, -1],
+	["mnpain", false, 96, 0, -1, -1],
+	["pepain", false, 96, 0, -1, -1],
+	["slop", false, 78, 0, -1, -1],
+	["itemup", true, 78, 0, -1, -1],
+	["wpnup", true, 78, 0, -1, -1],
+	["oof", false, 96, 0, -1, -1],
+	["telept", false, 32, 0, -1, -1],
+	["posit1", true, 98, 0, -1, -1],
+	["posit2", true, 98, 0, -1, -1],
+	["posit3", true, 98, 0, -1, -1],
+	["bgsit1", true, 98, 0, -1, -1],
+	["bgsit2", true, 98, 0, -1, -1],
+	["sgtsit", true, 98, 0, -1, -1],
+	["cacsit", true, 98, 0, -1, -1],
+	["brssit", true, 94, 0, -1, -1],
+	["cybsit", true, 92, 0, -1, -1],
+	["spisit", true, 90, 0, -1, -1],
+	["bspsit", true, 90, 0, -1, -1],
+	["kntsit", true, 90, 0, -1, -1],
+	["vilsit", true, 90, 0, -1, -1],
+	["mansit", true, 90, 0, -1, -1],
+	["pesit", true, 90, 0, -1, -1],
+	["sklatk", false, 70, 0, -1, -1],
+	["sgtatk", false, 70, 0, -1, -1],
+	["skepch", false, 70, 0, -1, -1],
+	["vilatk", false, 70, 0, -1, -1],
+	["claw", false, 70, 0, -1, -1],
+	["skeswg", false, 70, 0, -1, -1],
+	["pldeth", false, 32, 0, -1, -1],
+	["pdiehi", false, 32, 0, -1, -1],
+	["podth1", false, 70, 0, -1, -1],
+	["podth2", false, 70, 0, -1, -1],
+	["podth3", false, 70, 0, -1, -1],
+	["bgdth1", false, 70, 0, -1, -1],
+	["bgdth2", false, 70, 0, -1, -1],
+	["sgtdth", false, 70, 0, -1, -1],
+	["cacdth", false, 70, 0, -1, -1],
+	["skldth", false, 70, 0, -1, -1],
+	["brsdth", false, 32, 0, -1, -1],
+	["cybdth", false, 32, 0, -1, -1],
+	["spidth", false, 32, 0, -1, -1],
+	["bspdth", false, 32, 0, -1, -1],
+	["vildth", false, 32, 0, -1, -1],
+	["kntdth", false, 32, 0, -1, -1],
+	["pedth", false, 32, 0, -1, -1],
+	["skedth", false, 32, 0, -1, -1],
+	["posact", true, 120, 0, -1, -1],
+	["bgact", true, 120, 0, -1, -1],
+	["dmact", true, 120, 0, -1, -1],
+	["bspact", true, 100, 0, -1, -1],
+	["bspwlk", true, 100, 0, -1, -1],
+	["vilact", true, 100, 0, -1, -1],
+	["noway", false, 78, 0, -1, -1],
+	["barexp", false, 60, 0, -1, -1],
+	["punch", false, 64, 0, -1, -1],
+	["hoof", false, 70, 0, -1, -1],
+	["metal", false, 70, 0, -1, -1],
+	["chgun", false, 64, 1, 150, 0],
+	["tink", false, 60, 0, -1, -1],
+	["bdopn", false, 100, 0, -1, -1],
+	["bdcls", false, 100, 0, -1, -1],
+	["itmbk", false, 100, 0, -1, -1],
+	["flame", false, 32, 0, -1, -1],
+	["flamst", false, 32, 0, -1, -1],
+	["getpow", false, 60, 0, -1, -1],
+	["bospit", false, 70, 0, -1, -1],
+	["boscub", false, 70, 0, -1, -1],
+	["bossit", false, 70, 0, -1, -1],
+	["bospn", false, 70, 0, -1, -1],
+	["bosdth", false, 70, 0, -1, -1],
+	["manatk", false, 70, 0, -1, -1],
+	["mandth", false, 70, 0, -1, -1],
+	["sssit", false, 70, 0, -1, -1],
+	["ssdth", false, 70, 0, -1, -1],
+	["keenpn", false, 70, 0, -1, -1],
+	["keendt", false, 70, 0, -1, -1],
+	["skeact", false, 70, 0, -1, -1],
+	["skesit", false, 70, 0, -1, -1],
+	["skeatk", false, 70, 0, -1, -1],
+	["radio", false, 60, 0, -1, -1],
+];
+
+const DEFAULT_MODULE_NAME = "WAD";
+const ZSTD_SCRIPT_SOURCE = "oneidentity-zstd.js";
+
+const wadFile = document.getElementById("wadFile");
+const fileName = document.getElementById("fileName");
+const fileSize = document.getElementById("fileSize");
+const downloadRbxmx = document.getElementById("downloadRbxmx");
+const downloadWav = document.getElementById("downloadWav");
+const summaryNode = document.getElementById("summary");
+const zstdToggle = document.getElementById("zstdToggle");
+const base64Toggle = document.getElementById("base64Toggle");
+const oneLineToggle = document.getElementById("oneLineToggle");
+const exactRangesToggle = document.getElementById("exactRangesToggle");
+
+let rbxmxBlob = null;
+let wavBlob = null;
+let buildWorker = null;
+let currentFile = null;
+let currentFileVersion = 0;
+let currentOutputBaseName = DEFAULT_MODULE_NAME;
+
+function buildWorkerMain() {
+	"use strict";
+
+	const TARGET_RATE = 44100;
+	const BITS_PER_SAMPLE = 16;
+	const BYTES_PER_SAMPLE = 2;
+	const MASTER_GAIN = 0.25;
+	const SILENCE = 128;
+	const BYTE_LITERAL_LINE_BYTES = 32;
+	const BASE64_CHARS_PER_LINE = 128;
+	const ZSTD_COMPRESSION_LEVEL = 19;
+	const ENCODING_SERVICE_SOURCE = 'local EncodingService = game:GetService("EncodingService")\n';
+	const BUFFER_FROMSTRING_PREFIX = "buffer.fromstring(";
+	const BASE64_DECODE_PREFIX = "EncodingService:Base64Decode(";
+	const ZSTD_DECODE_PREFIX = "EncodingService:DecompressBuffer(";
+	const ZSTD_DECODE_SUFFIX = ", Enum.CompressionAlgorithm.Zstd)";
+	const BASE64_CODES = new TextEncoder().encode("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+	const EMPTY_ZSTD_FRAME = new Uint8Array([0x28, 0xB5, 0x2F, 0xFD, 0x20, 0x00]);
+	const BYTE_ESCAPES = Array.from({ length: 256 }, (_value, index) => `\\${index.toString().padStart(3, "0")}`);
+	let zstdSimplePromise = null;
+	let zstdBytesCacheKey = null;
+	let zstdBytesCache = null;
+
+	function readAscii(bytes, offset, length) {
+		const chars = [];
+
+		for (let i = 0; i < length; i += 1) {
+			const value = bytes[offset + i];
+			if (value === 0) {
+				break;
+			}
+			chars.push(String.fromCharCode(value));
+		}
+
+		return chars.join("");
+	}
+
+	function writeAscii(bytes, offset, text) {
+		for (let i = 0; i < text.length; i += 1) {
+			bytes[offset + i] = text.charCodeAt(i);
+		}
+	}
+
+	function escapeXml(text) {
+		return text
+			.replaceAll("&", "&amp;")
+			.replaceAll("<", "&lt;")
+			.replaceAll(">", "&gt;")
+			.replaceAll("\"", "&quot;");
+	}
+
+	function formatNumber(value) {
+		return Number(value.toFixed(6)).toString();
+	}
+
+	function quoteLuauString(text) {
+		return `"${text
+			.replaceAll("\\", "\\\\")
+			.replaceAll("\"", "\\\"")
+			.replaceAll("\r", "\\r")
+			.replaceAll("\n", "\\n")
+			.replaceAll("\t", "\\t")}"`;
+	}
+
+	function parseWad(bytes) {
+		const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+		const id = readAscii(bytes, 0, 4);
+		const lumpCount = view.getInt32(4, true);
+		const directoryOffset = view.getInt32(8, true);
+		const lumps = [];
+
+		if (id !== "IWAD" && id !== "PWAD") {
+			throw new Error("Not an IWAD/PWAD file.");
+		}
+		if (lumpCount < 0 || directoryOffset < 12 || directoryOffset + lumpCount * 16 > bytes.length) {
+			throw new Error("WAD directory is invalid.");
+		}
+
+		for (let i = 0; i < lumpCount; i += 1) {
+			const entryOffset = directoryOffset + i * 16;
+			const offset = view.getInt32(entryOffset, true);
+			const size = view.getInt32(entryOffset + 4, true);
+			if (offset < 0 || size < 0 || offset + size > bytes.length) {
+				throw new Error("WAD lump is invalid.");
+			}
+			lumps.push({
+				index: i,
+				offset,
+				size,
+				name: readAscii(bytes, entryOffset + 8, 8),
+			});
+		}
+
+		return { id, lumps };
+	}
+
+	function parseSoundLumps(bytes, lumps) {
+		const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+		const sounds = [];
+
+		for (const lump of lumps) {
+			if (!lump.name.startsWith("DS") || lump.size < 8) {
+				continue;
+			}
+
+			const format = view.getUint16(lump.offset, true);
+			const rate = view.getUint16(lump.offset + 2, true);
+			const sampleCount = view.getUint32(lump.offset + 4, true);
+
+			if (format !== 3 || rate === 0 || sampleCount > lump.size - 8) {
+				continue;
+			}
+
+			sounds.push({
+				name: lump.name,
+				offset: lump.offset + 8,
+				sourceRate: rate,
+				sourceSamples: sampleCount,
+				duration: sampleCount / rate,
+			});
+		}
+
+		return sounds;
+	}
+
+	function makeSoundRegions(soundLumps, exactRanges) {
+		let cursorSecond = 0;
+		const regions = [];
+
+		for (const sound of soundLumps) {
+			const allocatedSeconds = Math.max(1, Math.ceil(sound.duration));
+			const startSecond = cursorSecond;
+			const endSecond = startSecond + allocatedSeconds;
+			const targetSamples = Math.round(sound.sourceSamples * TARGET_RATE / sound.sourceRate);
+			const exactEnd = startSecond + targetSamples / TARGET_RATE;
+			const regionEnd = exactRanges ? Math.min(endSecond, exactEnd) : endSecond;
+
+			regions.push({
+				name: sound.name,
+				offset: sound.offset,
+				sourceRate: sound.sourceRate,
+				sourceSamples: sound.sourceSamples,
+				startSecond,
+				regionEnd,
+				targetSamples,
+				wavStartSample: startSecond * TARGET_RATE,
+			});
+
+			cursorSecond = endSecond;
+		}
+
+		return { regions, totalSeconds: cursorSecond };
+	}
+
+	function makeWav(bytes, regions, totalSeconds) {
+		const dataBytes = totalSeconds * TARGET_RATE * BYTES_PER_SAMPLE;
+		const wav = new Uint8Array(44 + dataBytes);
+		const view = new DataView(wav.buffer);
+		writeAscii(wav, 0, "RIFF");
+		view.setUint32(4, 36 + dataBytes, true);
+		writeAscii(wav, 8, "WAVE");
+		writeAscii(wav, 12, "fmt ");
+		view.setUint32(16, 16, true);
+		view.setUint16(20, 1, true);
+		view.setUint16(22, 1, true);
+		view.setUint32(24, TARGET_RATE, true);
+		view.setUint32(28, TARGET_RATE * BYTES_PER_SAMPLE, true);
+		view.setUint16(32, BYTES_PER_SAMPLE, true);
+		view.setUint16(34, BITS_PER_SAMPLE, true);
+		writeAscii(wav, 36, "data");
+		view.setUint32(40, dataBytes, true);
+
+		for (const region of regions) {
+			const sampleOffset = 44 + region.wavStartSample * BYTES_PER_SAMPLE;
+			const step = region.sourceRate / TARGET_RATE;
+			let sourceIndex = 0;
+
+			for (let i = 0; i < region.targetSamples; i += 1) {
+				const leftIndex = sourceIndex | 0;
+				const rightIndex = Math.min(region.sourceSamples - 1, leftIndex + 1);
+				const frac = sourceIndex - leftIndex;
+				const left = bytes[region.offset + leftIndex] - SILENCE;
+				const right = bytes[region.offset + rightIndex] - SILENCE;
+				const centered = left + (right - left) * frac;
+				const sample = Math.max(-32768, Math.min(32767, Math.round(centered / 128 * 32767 * MASTER_GAIN)));
+				view.setInt16(sampleOffset + i * BYTES_PER_SAMPLE, sample, true);
+				sourceIndex = Math.min(region.sourceSamples - 1, sourceIndex + step);
+			}
+		}
+
+		return wav;
+	}
+
+	function escapeLuauLine(bytes, offset, end) {
+		const parts = new Array(end - offset);
+
+		for (let i = offset; i < end; i += 1) {
+			parts[i - offset] = BYTE_ESCAPES[bytes[i]];
+		}
+
+		return parts.join("");
+	}
+
+	function appendAsciiLine(parts, bytes, offset, end) {
+		for (let i = offset; i < end; i += 8192) {
+			parts.push(String.fromCharCode(...bytes.subarray(i, Math.min(i + 8192, end))));
+		}
+	}
+
+	function appendLiteral(parts, bytes, ascii, oneLine) {
+		const width = oneLine ? Math.max(1, bytes.length) : (ascii ? BASE64_CHARS_PER_LINE : BYTE_LITERAL_LINE_BYTES);
+
+		parts.push("\"");
+
+		for (let offset = 0; offset < bytes.length; offset += width) {
+			const end = Math.min(bytes.length, offset + width);
+			if (ascii) {
+				appendAsciiLine(parts, bytes, offset, end);
+			} else {
+				parts.push(escapeLuauLine(bytes, offset, end));
+			}
+
+			if (end < bytes.length) {
+				parts.push("\\z\n\t\t");
+			}
+		}
+
+		parts.push("\"");
+	}
+
+	function base64EncodeBytes(bytes) {
+		const output = new Uint8Array(Math.ceil(bytes.length / 3) * 4);
+		let inputIndex = 0;
+		let outputIndex = 0;
+
+		while (inputIndex + 2 < bytes.length) {
+			const value = (bytes[inputIndex] << 16) | (bytes[inputIndex + 1] << 8) | bytes[inputIndex + 2];
+			output[outputIndex] = BASE64_CODES[(value >> 18) & 0x3F];
+			output[outputIndex + 1] = BASE64_CODES[(value >> 12) & 0x3F];
+			output[outputIndex + 2] = BASE64_CODES[(value >> 6) & 0x3F];
+			output[outputIndex + 3] = BASE64_CODES[value & 0x3F];
+			inputIndex += 3;
+			outputIndex += 4;
+		}
+
+		if (inputIndex < bytes.length) {
+			const remaining = bytes.length - inputIndex;
+			const value = (bytes[inputIndex] << 16) | (remaining === 2 ? bytes[inputIndex + 1] << 8 : 0);
+			output[outputIndex] = BASE64_CODES[(value >> 18) & 0x3F];
+			output[outputIndex + 1] = BASE64_CODES[(value >> 12) & 0x3F];
+			output[outputIndex + 2] = remaining === 2 ? BASE64_CODES[(value >> 6) & 0x3F] : 0x3D;
+			output[outputIndex + 3] = 0x3D;
+		}
+
+		return output;
+	}
+
+	async function getZstdSimple(codecUrl) {
+		if (zstdSimplePromise === null) {
+			zstdSimplePromise = (async () => {
+				self.window = self;
+				importScripts(codecUrl);
+				if (!self.ZstdInit) {
+					throw new Error("Zstd codec did not initialize.");
+				}
+
+				const zstd = await self.ZstdInit();
+				return zstd.ZstdSimple;
+			})();
+		}
+
+		return zstdSimplePromise;
+	}
+
+	async function zstdCompressBytes(bytes, codecUrl) {
+		if (bytes.length === 0) {
+			return EMPTY_ZSTD_FRAME;
+		}
+
+		const zstdSimple = await getZstdSimple(codecUrl);
+		const compressed = zstdSimple.compress(bytes, ZSTD_COMPRESSION_LEVEL);
+		if (!(compressed instanceof Uint8Array)) {
+			throw new Error("Zstd compression failed.");
+		}
+
+		return compressed;
+	}
+
+	async function getPayloadBytes(bytes, useZstd, useBase64, codecUrl, cacheKey) {
+		let payloadBytes = bytes;
+
+		if (useZstd) {
+			if (zstdBytesCache !== null && zstdBytesCacheKey === cacheKey) {
+				payloadBytes = zstdBytesCache;
+			} else {
+				payloadBytes = await zstdCompressBytes(payloadBytes, codecUrl);
+				zstdBytesCache = payloadBytes;
+				zstdBytesCacheKey = cacheKey;
+			}
+		}
+
+		if (useBase64) {
+			payloadBytes = base64EncodeBytes(payloadBytes);
+		}
+
+		return payloadBytes;
+	}
+
+	function appendDataExpression(parts, payloadBytes, useZstd, useBase64, oneLine) {
+		let prefix = BUFFER_FROMSTRING_PREFIX;
+		let suffix = ")";
+
+		if (useBase64) {
+			prefix = BASE64_DECODE_PREFIX + prefix;
+			suffix += ")";
+		}
+
+		if (useZstd) {
+			prefix = ZSTD_DECODE_PREFIX + prefix;
+			suffix += ZSTD_DECODE_SUFFIX;
+		}
+
+		parts.push("\tdata=", prefix);
+		appendLiteral(parts, payloadBytes, useBase64, oneLine);
+		parts.push(suffix, ",\n");
+	}
+
+	function makeSoundsSource(regions) {
+		const byName = new Map();
+		for (const region of regions) {
+			byName.set(region.name, region);
+		}
+
+		const lines = ["\tsounds={"];
+		for (let id = 1; id < SFX.length; id += 1) {
+			const [name, _singular, priority, link, _pitch, volume] = SFX[id];
+			const region = byName.get("DS" + name.toUpperCase());
+			const fields = [`name="${name}"`];
+
+			if (priority !== 64 || link !== 0) {
+				fields.push(`priority=${priority}`);
+			}
+			if (link !== 0) {
+				fields.push(`link=${link}`);
+			}
+			if (link !== 0 && volume !== 0) {
+				fields.push(`volume=${volume}`);
+			}
+			if (region !== undefined) {
+				fields.push(`range={${formatNumber(region.startSecond)},${formatNumber(region.regionEnd)}}`);
+			}
+
+			lines.push(`\t\t[${id}]={${fields.join(",")}},`);
+		}
+		lines.push("\t},");
+
+		return lines.join("\n");
+	}
+
+	function makeOverriddenSoundsSource(regions) {
+		const byName = new Set();
+		for (const region of regions) {
+			byName.add(region.name);
+		}
+
+		const lines = ["\toverriddenSounds={"];
+		for (let id = 1; id < SFX.length; id += 1) {
+			const [name] = SFX[id];
+
+			if (byName.has("DS" + name.toUpperCase())) {
+				lines.push(`\t\t[${id}]=true,`);
+			}
+		}
+		lines.push("\t},");
+
+		return lines.join("\n");
+	}
+
+	function makeWadInfoSource(wad, sourceName, regions) {
+		const label = typeof sourceName === "string" ? sourceName : wad.id;
+
+		return [
+			`\tid=${quoteLuauString(wad.id)},`,
+			`\tlabel=${quoteLuauString(label)},`,
+			`\tname=${quoteLuauString(label)},`,
+			`\tlumpCount=${wad.lumps.length},`,
+			`\tsoundCount=${regions.length},`,
+		].join("\n");
+	}
+
+	async function makeModuleParts(bytes, wad, regions, options, sourceName) {
+		const { useZstd, useBase64, oneLine, codecUrl, cacheKey } = options;
+		const parts = [];
+		const payloadBytes = await getPayloadBytes(bytes, useZstd, useBase64, codecUrl, cacheKey);
+
+		if (useZstd || useBase64) {
+			parts.push(ENCODING_SERVICE_SOURCE, "\n");
+		}
+
+		parts.push("return {\n");
+		parts.push(makeWadInfoSource(wad, sourceName, regions), "\n");
+		appendDataExpression(parts, payloadBytes, useZstd, useBase64, oneLine);
+		parts.push(makeSoundsSource(regions), "\n");
+		parts.push(makeOverriddenSoundsSource(regions), "\n}");
+		return parts;
+	}
+
+	function makeRbxmxBlob(moduleName, moduleParts) {
+		const parts = [
+			'<roblox version="4">\n',
+			'\t<Item class="ModuleScript" referent="RBX0">\n',
+			"\t\t<Properties>\n",
+			`\t\t\t<string name="Name">${escapeXml(moduleName)}</string>\n`,
+			'\t\t\t<ProtectedString name="Source"><![CDATA[',
+		];
+
+		for (const part of moduleParts) {
+			parts.push(part);
+		}
+
+		parts.push(
+			"]]></ProtectedString>\n",
+			"\t\t</Properties>\n",
+			"\t</Item>\n",
+			"</roblox>",
+		);
+
+		return new Blob(parts, { type: "application/xml" });
+	}
+
+	self.addEventListener("message", async (event) => {
+		try {
+			const { buffer, moduleName, sourceName, options } = event.data;
+			const bytes = new Uint8Array(buffer);
+
+			self.postMessage({ type: "status", text: "parsing" });
+			const wad = parseWad(bytes);
+			const soundLumps = parseSoundLumps(bytes, wad.lumps);
+			const { regions, totalSeconds } = makeSoundRegions(soundLumps, options.includeExactRange);
+
+			self.postMessage({ type: "status", text: "building WAV" });
+			const wav = makeWav(bytes, regions, totalSeconds);
+			const wavBlob = new Blob([wav], { type: "audio/wav" });
+
+			if (options.useZstd) {
+				self.postMessage({ type: "status", text: "compressing RBXMX data" });
+			}
+			self.postMessage({ type: "status", text: "building RBXMX" });
+			const moduleParts = await makeModuleParts(bytes, wad, regions, options, sourceName);
+			const rbxmxBlob = makeRbxmxBlob(moduleName, moduleParts);
+
+			self.postMessage({
+				type: "done",
+				rbxmxBlob,
+				wavBlob,
+				summary: {
+					wadId: wad.id,
+					lumpCount: wad.lumps.length,
+					soundCount: soundLumps.length,
+					rbxmxSize: rbxmxBlob.size,
+					wavSize: wavBlob.size,
+				},
+			});
+		} catch (error) {
+			self.postMessage({
+				type: "error",
+				text: error instanceof Error ? error.message : String(error),
+			});
+		}
+	});
+}
+
+function clearBuildWorker() {
+	if (buildWorker !== null) {
+		buildWorker.terminate();
+		buildWorker = null;
+	}
+}
+
+function getBuildWorker() {
+	if (buildWorker === null) {
+		buildWorker = createBuildWorker();
+	}
+
+	return buildWorker;
+}
+
+function createBuildWorker() {
+	const source = [
+		`const SFX=${JSON.stringify(SFX)};`,
+		`(${buildWorkerMain.toString()})();`,
+	].join("\n");
+	const url = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+	const worker = new Worker(url);
+	setTimeout(() => URL.revokeObjectURL(url), 0);
+	return worker;
+}
+
+function formatSize(bytes) {
+	if (bytes < 1024) {
+		return `${bytes} B`;
+	}
+
+	const kib = bytes / 1024;
+	if (kib < 1024) {
+		return `${kib.toFixed(1)} KB`;
+	}
+
+	return `${(kib / 1024).toFixed(2)} MB`;
+}
+
+function setBuilding(building) {
+	wadFile.disabled = building;
+	zstdToggle.disabled = building;
+	base64Toggle.disabled = building;
+	oneLineToggle.disabled = building;
+	exactRangesToggle.disabled = building;
+	downloadRbxmx.disabled = building || rbxmxBlob === null;
+	downloadWav.disabled = building || wavBlob === null;
+}
+
+function resetOutput() {
+	rbxmxBlob = null;
+	wavBlob = null;
+	downloadRbxmx.textContent = "RBXMX";
+	downloadWav.textContent = "WAV";
+	downloadRbxmx.disabled = true;
+	downloadWav.disabled = true;
+}
+
+function getSelectedOptions() {
+	return {
+		useZstd: zstdToggle.checked,
+		useBase64: base64Toggle.checked,
+		oneLine: oneLineToggle.checked,
+		includeExactRange: exactRangesToggle.checked,
+		codecUrl: new URL(ZSTD_SCRIPT_SOURCE, location.href).href,
+		cacheKey: currentFileVersion,
+	};
+}
+
+function getWadBaseName(name) {
+	const baseName = name.replace(/\.wad$/i, "").trim();
+	return baseName === "" ? DEFAULT_MODULE_NAME : baseName;
+}
+
+function downloadBlob(blob, filename) {
+	if (blob === null) {
+		return;
+	}
+
+	const url = URL.createObjectURL(blob);
+	const anchor = document.createElement("a");
+	anchor.href = url;
+	anchor.download = filename;
+	anchor.click();
+	setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+async function buildFromFile(file) {
+	if (file === undefined) {
+		currentFile = null;
+		currentOutputBaseName = DEFAULT_MODULE_NAME;
+		summaryNode.textContent = "Choose an IWAD or PWAD. Export creates a Roblox module and a combined WAV sound atlas.";
+		fileName.textContent = "Nothing loaded";
+		fileName.title = "";
+		fileSize.textContent = "IWAD or PWAD input";
+		resetOutput();
+		setBuilding(false);
+		return;
+	}
+
+	if (file !== currentFile) {
+		currentFile = file;
+		currentFileVersion += 1;
+	}
+	resetOutput();
+	const options = getSelectedOptions();
+	currentOutputBaseName = getWadBaseName(file.name);
+	setBuilding(true);
+	fileName.textContent = file.name;
+	fileName.title = file.name;
+	fileSize.textContent = formatSize(file.size);
+	summaryNode.textContent = `${file.name} - reading`;
+
+	try {
+		const buffer = await file.arrayBuffer();
+		const worker = getBuildWorker();
+
+		worker.onmessage = (event) => {
+			const message = event.data;
+
+			if (message.type === "status") {
+				summaryNode.textContent = `${file.name} - ${message.text}`;
+				return;
+			}
+
+			if (message.type === "error") {
+				clearBuildWorker();
+				setBuilding(false);
+				summaryNode.textContent = `${file.name} - failed: ${message.text}`;
+				return;
+			}
+
+			if (message.type === "done") {
+				const buildSummary = message.summary;
+				rbxmxBlob = message.rbxmxBlob;
+				wavBlob = message.wavBlob;
+				setBuilding(false);
+				downloadRbxmx.textContent = rbxmxBlob === null ? "RBXMX" : `RBXMX ${formatSize(buildSummary.rbxmxSize)}`;
+				downloadWav.textContent = wavBlob === null ? "WAV" : `WAV ${formatSize(buildSummary.wavSize)}`;
+				summaryNode.textContent = `${file.name} - ${buildSummary.wadId} - ${buildSummary.lumpCount} lumps - ${buildSummary.soundCount} SFX`;
+			}
+		};
+		worker.onerror = (event) => {
+			clearBuildWorker();
+			setBuilding(false);
+			summaryNode.textContent = `${file.name} - failed: ${event.message}`;
+		};
+		worker.postMessage({
+			buffer,
+			moduleName: currentOutputBaseName,
+			sourceName: file.name,
+			options,
+		}, [buffer]);
+	} catch (error) {
+		clearBuildWorker();
+		setBuilding(false);
+		summaryNode.textContent = `${file.name} - failed: ${error instanceof Error ? error.message : String(error)}`;
+	}
+}
+
+wadFile.addEventListener("change", () => {
+	buildFromFile(wadFile.files[0]);
+});
+
+function rebuildCurrentFile() {
+	resetOutput();
+	setBuilding(false);
+	if (currentFile !== null) {
+		buildFromFile(currentFile);
+	}
+}
+
+zstdToggle.addEventListener("change", rebuildCurrentFile);
+base64Toggle.addEventListener("change", rebuildCurrentFile);
+oneLineToggle.addEventListener("change", rebuildCurrentFile);
+exactRangesToggle.addEventListener("change", rebuildCurrentFile);
+
+downloadRbxmx.addEventListener("click", () => {
+	downloadBlob(rbxmxBlob, `${currentOutputBaseName}.rbxmx`);
+});
+
+downloadWav.addEventListener("click", () => {
+	downloadBlob(wavBlob, `${currentOutputBaseName}_sfx_all.wav`);
+});
+
+setBuilding(false);
+</script>
+</body>
+</html>
