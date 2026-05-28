@@ -4,7 +4,7 @@
 -- Public engine entry point.
 -- Mirrors the README API.
 -- `require("@self/Src")` returns a singleton with:
--- `init(config?)`, `reset()`, `loadIWAD(buffer)`, `loadPWAD(buffer)`,
+-- `init(config?)`, `reset()`, `loadIWAD(buffer | { data = buffer })`, `loadPWAD(buffer | { data = buffer })`,
 -- `clearPWADs()`, `startNewGame(skill, episode, map)`, `loadMap(episode, map)`,
 -- `playDemo(name)`,
 -- `startMenu()`, `startTitle()`, `saveGame(slot, desc)`, `loadGame(slot)`,
@@ -89,6 +89,34 @@ type EngineConfig = {
 	screenWidth: number?,
 	screenHeight: number?,
 	devparm: boolean?,
+}
+type CallbackMap = { [string]: unknown }
+type WadSoundInfo = {
+	name: string?,
+	priority: number?,
+	link: number?,
+	volume: number?,
+	range: { number }?,
+}
+type WadData = {
+	data: buffer,
+	id: string?,
+	label: string?,
+	name: string?,
+	lumpCount: number?,
+	soundCount: number?,
+	sounds: { [number]: WadSoundInfo }?,
+	overriddenSounds: { [number]: boolean }?,
+}
+type WADLoadInfo = {
+	data: buffer,
+	id: string?,
+	label: string?,
+	lumpCount: number?,
+	soundCount: number?,
+	module: WadData?,
+	sounds: { [number]: WadSoundInfo }?,
+	overriddenSounds: { [number]: boolean }?,
 }
 type MobjState = {
 	x: number,
@@ -1708,6 +1736,45 @@ const function Reset()
 	initialized = true
 end
 
+const function ResolveWADInput(input: buffer | WadData, label: string?): WADLoadInfo
+	if typeof(input) == "buffer" then
+		return {
+			data = input :: buffer,
+			id = nil,
+			label = label,
+			lumpCount = nil,
+			soundCount = nil,
+			module = nil,
+			sounds = nil,
+			overriddenSounds = nil,
+		}
+	end
+
+	const moduleInfo = input :: WadData
+	const data = moduleInfo.data
+
+	local resolvedLabel = label
+
+	if resolvedLabel == nil then
+		if moduleInfo.label ~= nil then
+			resolvedLabel = moduleInfo.label
+		elseif moduleInfo.name ~= nil then
+			resolvedLabel = moduleInfo.name
+		end
+	end
+
+	return {
+		data = data,
+		id = moduleInfo.id,
+		label = resolvedLabel,
+		lumpCount = moduleInfo.lumpCount,
+		soundCount = moduleInfo.soundCount,
+		module = moduleInfo,
+		sounds = moduleInfo.sounds,
+		overriddenSounds = moduleInfo.overriddenSounds,
+	}
+end
+
 const function StartNewGame(skill: number, episode: number, map: number)
 	const wipeStartBuffer = CaptureCleanWipeStartBuffer()
 
@@ -1723,15 +1790,17 @@ const function StartNewGame(skill: number, episode: number, map: number)
 	ArmScreenWipeFromBuffer(wipeStartBuffer)
 end
 
-const function LoadIWAD(data: buffer, label: string?)
+const function LoadIWAD(input: buffer | WadData, label: string?)
+	const wadInfo = ResolveWADInput(input, label)
+
 	Wad.Reset()
 	ResetRuntimeState()
-	Wad.LoadIWAD(data, label)
+	Wad.LoadIWAD(wadInfo.data, wadInfo.label)
 	table.clear(saveSlots)
 	hasIWAD = true
 	currentGameMode = DetectGameMode()
 
-	if IsFrenchIWADLabel(label) then
+	if IsFrenchIWADLabel(wadInfo.label) then
 		setLanguage(Definitions.french)
 	else
 		setLanguage(Definitions.english)
@@ -1741,12 +1810,27 @@ const function LoadIWAD(data: buffer, label: string?)
 	StartTitleLoop()
 end
 
-const function LoadPWAD(data: buffer, label: string?)
-	Wad.LoadPWAD(data, label)
+const function LoadPWAD(input: buffer | WadData, label: string?)
+	if not hasIWAD then
+		error("loadPWAD: load an IWAD first")
+	end
+
+	const wadInfo = ResolveWADInput(input, label)
+	const reloadLevel = mapLoaded and currentGameState == Definitions.LEVEL and not Setup.GetDemoPlayback()
+	const episode = Setup.GetCurrentEpisode()
+	const map = Setup.GetCurrentMap()
+	const skill = Setup.GetCurrentSkill()
+
+	Wad.LoadPWAD(wadInfo.data, wadInfo.label)
 	ResetRuntimeState()
 	table.clear(saveSlots)
 	RebuildRuntime(StartNewGame)
-	StartTitleLoop()
+
+	if reloadLevel then
+		StartNewGame(skill, episode, map)
+	else
+		StartTitleLoop()
+	end
 end
 
 const function ClearPWADs()
