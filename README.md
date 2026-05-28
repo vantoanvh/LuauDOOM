@@ -1,7 +1,11 @@
 # LuauDOOM
-Fully ported the original DOOM engine to a luau modern source port.
+Fully ported the original DOOM engine to a luau modern source port.<br>
 
-Code example:
+Pretty sure typed correctly and very, very fast.<br>
+Uses [This website](https://vantoanvh.github.io/LuauDOOM/) to convert wads to luau files.
+> This uses EditableImage so you need ID verification for this.
+# Code usage
+Pretty all of it, like mouse inputs, OST, sounds, PWAD, sizes and such.
 ```luau
 local UserInputService = game:GetService("UserInputService")
 local AssetService = game:GetService("AssetService")
