@@ -1,11 +1,41 @@
-# LuauDOOM
-Fully ported the original DOOM engine to a luau modern source port.<br>
+<div id="toc">
+  <ul style="list-style: none">
+    <summary>
+      <h1> LuauDOOM </h1>
+    </summary>
+  </ul>
+</div>
 
-Pretty sure typed correctly and very, very fast.<br>
-Uses [This website](https://vantoanvh.github.io/LuauDOOM/) to convert wads to luau files.
-> This uses EditableImage so you need ID verification for this.
-# Code usage
-Pretty all of it, like mouse inputs, OST, sounds, PWAD, sizes and such.
+![Ver](https://img.shields.io/badge/version-v1.0.0-blue?style=plastic)
+[![License](https://img.shields.io/badge/license-GPLv2-28a745?style=plastic)](https://github.com/vantoanvh/LuauNES/blob/main/LICENSE)
+[![Release](https://img.shields.io/badge/release-latest-darkblue?style=plastic)](https://github.com/vantoanvh/LuauNES/releases/latest)
+
+A fast, modern Luau source port of the original **DOOM** engine.<br>
+Fast, configurable, and built for Roblox, with WAD conversion and audio support.
+
+## Introduction
+
+Use the **[LuauDOOM WAD converter](https://vantoanvh.github.io/LuauDOOM/)** to convert WAD files into Luau-compatible files and SFX `.wav` files.
+> **Note:** LuauDOOM uses `EditableImage`, so Roblox ID verification is required.
+
+### Supported
+
+* Most features from the original **[DOOM source release](https://github.com/id-software/doom)**, with selected modifications from **[Chocolate Doom](https://github.com/chocolate-doom/chocolate-doom)**
+* Removed hardcoded `320x200` resolution and `35 FPS` limitations
+* Custom SFX and OST support
+* PWAD support
+* Configurable mouse input, audio, display size, and related settings
+* Clean, abstracted, and typed Luau code
+* Designed to be fast and easy to modify
+
+### Not Supported Yet
+
+* PWAD sound replacement/modification
+
+## Code Usage
+
+Most systems are configurable, including mouse input, OST, sound effects, PWAD loading, screen size, and other engine behavior.
+
 ```luau
 local UserInputService = game:GetService("UserInputService")
 local AssetService = game:GetService("AssetService")
