@@ -7,8 +7,8 @@
 </div>
 
 ![Ver](https://img.shields.io/badge/version-v1.0.0-blue?style=plastic)
-[![License](https://img.shields.io/badge/license-GPLv2-28a745?style=plastic)](https://github.com/vantoanvh/LuauNES/blob/main/LICENSE)
-[![Release](https://img.shields.io/badge/release-latest-darkblue?style=plastic)](https://github.com/vantoanvh/LuauNES/releases/latest)
+[![License](https://img.shields.io/badge/license-GPLv2-28a745?style=plastic)](https://github.com/vantoanvh/LuauDOOM/blob/main/LICENSE)
+[![Release](https://img.shields.io/badge/release-latest-darkblue?style=plastic)](https://github.com/vantoanvh/LuauDOOM/releases/latest)
 
 A fast, modern Luau source port of the original **DOOM** engine.<br>
 Fast, configurable, and built for Roblox, with WAD conversion and audio support.
