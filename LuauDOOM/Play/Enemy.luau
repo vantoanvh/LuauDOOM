@@ -778,7 +778,7 @@ const function CyberAttackAction(actor: DoomMobj)
 	end
 
 	FaceTargetAction(actor)
-	Mobj.SpawnMissile(actor, actor.target, Info.ROCKET)
+	Mobj.SpawnMissile(actor, actor.target, Info.RocketMobj)
 end
 
 const function BruisAttackAction(actor: DoomMobj)
@@ -806,7 +806,7 @@ const function SkelMissileAction(actor: DoomMobj)
 	FaceTargetAction(actor)
 	actor.z += 16 * FRACUNIT
 
-	const mo = Mobj.SpawnMissile(actor, actor.target, Info.TRACER)
+	const mo = Mobj.SpawnMissile(actor, actor.target, Info.TracerMobj)
 
 	actor.z -= 16 * FRACUNIT
 
@@ -1360,7 +1360,7 @@ const function BrainScreamAction(mo: DoomMobj)
 	for x = mo.x - 196 * FRACUNIT, mo.x + 320 * FRACUNIT, 8 * FRACUNIT do
 		const y = mo.y - 320 * FRACUNIT
 		const z = 128 + DoomRandom() * 2 * FRACUNIT
-		const th = Mobj.SpawnMobj(x, y, z, Info.ROCKET)
+		const th = Mobj.SpawnMobj(x, y, z, Info.RocketMobj)
 
 		th.momz = DoomRandom() * 512
 		Mobj.SetMobjState(th, Info.BRAINEXPLODE1)
@@ -1380,7 +1380,7 @@ const function BrainExplodeAction(mo: DoomMobj)
 	const x = mo.x + (DoomRandom() - DoomRandom()) * 2048
 	const y = mo.y
 	const z = 128 + DoomRandom() * 2 * FRACUNIT
-	const th = Mobj.SpawnMobj(x, y, z, Info.ROCKET)
+	const th = Mobj.SpawnMobj(x, y, z, Info.RocketMobj)
 
 	th.momz = DoomRandom() * 512
 	Mobj.SetMobjState(th, Info.BRAINEXPLODE1)

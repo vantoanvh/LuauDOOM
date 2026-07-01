@@ -478,12 +478,12 @@ end
 
 const function FireMissileAction(player: PlayerState, _psp: PlayerSpriteState)
 	player.ammo[GetWeaponDefinition(player.readyweapon, "FireMissileAction").ammo] -= 1
-	Runtime.spawnPlayerMissile(player.mo, Info.ROCKET)
+	Runtime.spawnPlayerMissile(player.mo, Info.RocketMobj)
 end
 
 const function FireBFGAction(player: PlayerState, _psp: PlayerSpriteState)
 	player.ammo[GetWeaponDefinition(player.readyweapon, "FireBFGAction").ammo] -= BFGCELLS
-	Runtime.spawnPlayerMissile(player.mo, Info.BFG)
+	Runtime.spawnPlayerMissile(player.mo, Info.BfgMobj)
 end
 
 const function FirePlasmaAction(player: PlayerState, _psp: PlayerSpriteState)
@@ -493,7 +493,7 @@ const function FirePlasmaAction(player: PlayerState, _psp: PlayerSpriteState)
 		ps_flash,
 		GetWeaponDefinition(player.readyweapon, "FirePlasmaAction").flashstate + bit32.band(RandomValue(), 1)
 	)
-	Runtime.spawnPlayerMissile(player.mo, Info.PLASMA)
+	Runtime.spawnPlayerMissile(player.mo, Info.PlasmaMobj)
 end
 
 -- CalculateBulletSlope

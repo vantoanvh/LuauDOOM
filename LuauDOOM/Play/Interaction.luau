@@ -166,7 +166,7 @@ const weaponinfo = {
 		ammo = Definitions.am_misl,
 		upstate = Info.MISSILEUP,
 		downstate = Info.MISSILEDOWN,
-		readystate = Info.MISSILE,
+		readystate = Info.MissileWeaponReady,
 		atkstate = Info.MISSILE1,
 		flashstate = Info.MISSILEFLASH1,
 	},
@@ -174,7 +174,7 @@ const weaponinfo = {
 		ammo = Definitions.am_cell,
 		upstate = Info.PLASMAUP,
 		downstate = Info.PLASMADOWN,
-		readystate = Info.PLASMA,
+		readystate = Info.PlasmaWeaponReady,
 		atkstate = Info.PLASMA1,
 		flashstate = Info.PLASMAFLASH1,
 	},
@@ -182,7 +182,7 @@ const weaponinfo = {
 		ammo = Definitions.am_cell,
 		upstate = Info.BFGUP,
 		downstate = Info.BFGDOWN,
-		readystate = Info.BFG,
+		readystate = Info.BfgWeaponReady,
 		atkstate = Info.BFG1,
 		flashstate = Info.BFGFLASH1,
 	},
@@ -791,7 +791,7 @@ const function KillMobj(source: MapObject?, target: MapObject)
 	local item
 
 	if target.type == Info.WOLFSS or target.type == Info.POSSESSED then
-		item = Info.CLIP
+		item = Info.ClipMobj
 	elseif target.type == Info.SHOTGUY then
 		item = Info.SHOTGUN
 	elseif target.type == Info.CHAINGUY then

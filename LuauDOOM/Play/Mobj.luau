@@ -298,7 +298,7 @@ const function ExplodeMissile(mobj: Mobj)
 		mobj.tics = 1
 	end
 
-	mobj.flags = bit32.band(mobj.flags, bit32.bnot(Info.MISSILE))
+	mobj.flags = bit32.band(mobj.flags, bit32.bnot(Info.MissileFlag))
 
 	if mobj.info.deathsound then
 		Runtime.startSound(mobj, mobj.info.deathsound)
@@ -355,7 +355,7 @@ const function ApplyXYMovement(mo: Mobj)
 		if not Map.TryMove(mo, ptryx, ptryy) then
 			if mo.player then
 				Map.SlideMove(mo)
-			elseif bit32.btest(mo.flags, Info.MISSILE) then
+			elseif bit32.btest(mo.flags, Info.MissileFlag) then
 				const line = Map.GetCeilingLine()
 
 				if line
@@ -379,7 +379,7 @@ const function ApplyXYMovement(mo: Mobj)
 		return
 	end
 
-	if bit32.btest(mo.flags, bit32.bor(Info.MISSILE, Info.SKULLFLY)) then
+	if bit32.btest(mo.flags, bit32.bor(Info.MissileFlag, Info.SKULLFLY)) then
 		return
 	end
 
@@ -464,7 +464,7 @@ const function ApplyZMovement(mo: Mobj)
 
 		mo.z = mo.floorz
 
-		if bit32.btest(mo.flags, Info.MISSILE)
+		if bit32.btest(mo.flags, Info.MissileFlag)
 			and bit32.band(mo.flags, Info.NOCLIP) == 0 then
 			ExplodeMissile(mo)
 			return
@@ -488,7 +488,7 @@ const function ApplyZMovement(mo: Mobj)
 			mo.momz = -mo.momz
 		end
 
-		if bit32.btest(mo.flags, Info.MISSILE)
+		if bit32.btest(mo.flags, Info.MissileFlag)
 			and bit32.band(mo.flags, Info.NOCLIP) == 0 then
 			ExplodeMissile(mo)
 			return
@@ -572,11 +572,11 @@ const function NightmareRespawn(mobj: Mobj)
 		return
 	end
 
-	local mo = SpawnMobj(mobj.x, mobj.y, mobj.subsector.sector.floorheight, Info.TFOG)
+	local mo = SpawnMobj(mobj.x, mobj.y, mobj.subsector.sector.floorheight, Info.TfogMobj)
 	Runtime.startSound(mo, sfx_telept)
 
 	const ss = MapUtil.PointInSubsector(x, y)
-	mo = SpawnMobj(x, y, ss.sector.floorheight, Info.TFOG)
+	mo = SpawnMobj(x, y, ss.sector.floorheight, Info.TfogMobj)
 	Runtime.startSound(mo, sfx_telept)
 
 	const z = if bit32.btest(mobj.info.flags, Info.SPAWNCEILING) then ONCEILINGZ else ONFLOORZ

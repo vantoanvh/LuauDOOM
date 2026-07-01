@@ -194,6 +194,7 @@ const function SetViewSize(blocks: number, detail: number)
 end
 
 -- ExecuteSetViewSize
+@native
 const function ExecuteSetViewSize()
 	const renderWidth = Video.Width
 	const renderHeight = Video.Height
